@@ -1,0 +1,560 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "Gradient_boosting.ipynb",
+      "provenance": [],
+      "collapsed_sections": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "xVLO9ZqSLpnp"
+      },
+      "outputs": [],
+      "source": [
+        "\n",
+        "import numpy as np # linear algebra\n",
+        "import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n",
+        "import matplotlib.pyplot as plt # for data visualization\n",
+        "import seaborn as sns # for statistical data visualization\n",
+        "%matplotlib inline"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import files\n",
+        "uploaded = files.upload()"
+      ],
+      "metadata": {
+        "colab": {
+          "resources": {
+            "http://localhost:8080/nbextensions/google.colab/files.js": {
+              "data": "Ly8gQ29weXJpZ2h0IDIwMTcgR29vZ2xlIExMQwovLwovLyBMaWNlbnNlZCB1bmRlciB0aGUgQXBhY2hlIExpY2Vuc2UsIFZlcnNpb24gMi4wICh0aGUgIkxpY2Vuc2UiKTsKLy8geW91IG1heSBub3QgdXNlIHRoaXMgZmlsZSBleGNlcHQgaW4gY29tcGxpYW5jZSB3aXRoIHRoZSBMaWNlbnNlLgovLyBZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKLy8KLy8gICAgICBodHRwOi8vd3d3LmFwYWNoZS5vcmcvbGljZW5zZXMvTElDRU5TRS0yLjAKLy8KLy8gVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQovLyBkaXN0cmlidXRlZCB1bmRlciB0aGUgTGljZW5zZSBpcyBkaXN0cmlidXRlZCBvbiBhbiAiQVMgSVMiIEJBU0lTLAovLyBXSVRIT1VUIFdBUlJBTlRJRVMgT1IgQ09ORElUSU9OUyBPRiBBTlkgS0lORCwgZWl0aGVyIGV4cHJlc3Mgb3IgaW1wbGllZC4KLy8gU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAovLyBsaW1pdGF0aW9ucyB1bmRlciB0aGUgTGljZW5zZS4KCi8qKgogKiBAZmlsZW92ZXJ2aWV3IEhlbHBlcnMgZm9yIGdvb2dsZS5jb2xhYiBQeXRob24gbW9kdWxlLgogKi8KKGZ1bmN0aW9uKHNjb3BlKSB7CmZ1bmN0aW9uIHNwYW4odGV4dCwgc3R5bGVBdHRyaWJ1dGVzID0ge30pIHsKICBjb25zdCBlbGVtZW50ID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnc3BhbicpOwogIGVsZW1lbnQudGV4dENvbnRlbnQgPSB0ZXh0OwogIGZvciAoY29uc3Qga2V5IG9mIE9iamVjdC5rZXlzKHN0eWxlQXR0cmlidXRlcykpIHsKICAgIGVsZW1lbnQuc3R5bGVba2V5XSA9IHN0eWxlQXR0cmlidXRlc1trZXldOwogIH0KICByZXR1cm4gZWxlbWVudDsKfQoKLy8gTWF4IG51bWJlciBvZiBieXRlcyB3aGljaCB3aWxsIGJlIHVwbG9hZGVkIGF0IGEgdGltZS4KY29uc3QgTUFYX1BBWUxPQURfU0laRSA9IDEwMCAqIDEwMjQ7CgpmdW5jdGlvbiBfdXBsb2FkRmlsZXMoaW5wdXRJZCwgb3V0cHV0SWQpIHsKICBjb25zdCBzdGVwcyA9IHVwbG9hZEZpbGVzU3RlcChpbnB1dElkLCBvdXRwdXRJZCk7CiAgY29uc3Qgb3V0cHV0RWxlbWVudCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKG91dHB1dElkKTsKICAvLyBDYWNoZSBzdGVwcyBvbiB0aGUgb3V0cHV0RWxlbWVudCB0byBtYWtlIGl0IGF2YWlsYWJsZSBmb3IgdGhlIG5leHQgY2FsbAogIC8vIHRvIHVwbG9hZEZpbGVzQ29udGludWUgZnJvbSBQeXRob24uCiAgb3V0cHV0RWxlbWVudC5zdGVwcyA9IHN0ZXBzOwoKICByZXR1cm4gX3VwbG9hZEZpbGVzQ29udGludWUob3V0cHV0SWQpOwp9CgovLyBUaGlzIGlzIHJvdWdobHkgYW4gYXN5bmMgZ2VuZXJhdG9yIChub3Qgc3VwcG9ydGVkIGluIHRoZSBicm93c2VyIHlldCksCi8vIHdoZXJlIHRoZXJlIGFyZSBtdWx0aXBsZSBhc3luY2hyb25vdXMgc3RlcHMgYW5kIHRoZSBQeXRob24gc2lkZSBpcyBnb2luZwovLyB0byBwb2xsIGZvciBjb21wbGV0aW9uIG9mIGVhY2ggc3RlcC4KLy8gVGhpcyB1c2VzIGEgUHJvbWlzZSB0byBibG9jayB0aGUgcHl0aG9uIHNpZGUgb24gY29tcGxldGlvbiBvZiBlYWNoIHN0ZXAsCi8vIHRoZW4gcGFzc2VzIHRoZSByZXN1bHQgb2YgdGhlIHByZXZpb3VzIHN0ZXAgYXMgdGhlIGlucHV0IHRvIHRoZSBuZXh0IHN0ZXAuCmZ1bmN0aW9uIF91cGxvYWRGaWxlc0NvbnRpbnVlKG91dHB1dElkKSB7CiAgY29uc3Qgb3V0cHV0RWxlbWVudCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKG91dHB1dElkKTsKICBjb25zdCBzdGVwcyA9IG91dHB1dEVsZW1lbnQuc3RlcHM7CgogIGNvbnN0IG5leHQgPSBzdGVwcy5uZXh0KG91dHB1dEVsZW1lbnQubGFzdFByb21pc2VWYWx1ZSk7CiAgcmV0dXJuIFByb21pc2UucmVzb2x2ZShuZXh0LnZhbHVlLnByb21pc2UpLnRoZW4oKHZhbHVlKSA9PiB7CiAgICAvLyBDYWNoZSB0aGUgbGFzdCBwcm9taXNlIHZhbHVlIHRvIG1ha2UgaXQgYXZhaWxhYmxlIHRvIHRoZSBuZXh0CiAgICAvLyBzdGVwIG9mIHRoZSBnZW5lcmF0b3IuCiAgICBvdXRwdXRFbGVtZW50Lmxhc3RQcm9taXNlVmFsdWUgPSB2YWx1ZTsKICAgIHJldHVybiBuZXh0LnZhbHVlLnJlc3BvbnNlOwogIH0pOwp9CgovKioKICogR2VuZXJhdG9yIGZ1bmN0aW9uIHdoaWNoIGlzIGNhbGxlZCBiZXR3ZWVuIGVhY2ggYXN5bmMgc3RlcCBvZiB0aGUgdXBsb2FkCiAqIHByb2Nlc3MuCiAqIEBwYXJhbSB7c3RyaW5nfSBpbnB1dElkIEVsZW1lbnQgSUQgb2YgdGhlIGlucHV0IGZpbGUgcGlja2VyIGVsZW1lbnQuCiAqIEBwYXJhbSB7c3RyaW5nfSBvdXRwdXRJZCBFbGVtZW50IElEIG9mIHRoZSBvdXRwdXQgZGlzcGxheS4KICogQHJldHVybiB7IUl0ZXJhYmxlPCFPYmplY3Q+fSBJdGVyYWJsZSBvZiBuZXh0IHN0ZXBzLgogKi8KZnVuY3Rpb24qIHVwbG9hZEZpbGVzU3RlcChpbnB1dElkLCBvdXRwdXRJZCkgewogIGNvbnN0IGlucHV0RWxlbWVudCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGlucHV0SWQpOwogIGlucHV0RWxlbWVudC5kaXNhYmxlZCA9IGZhbHNlOwoKICBjb25zdCBvdXRwdXRFbGVtZW50ID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQob3V0cHV0SWQpOwogIG91dHB1dEVsZW1lbnQuaW5uZXJIVE1MID0gJyc7CgogIGNvbnN0IHBpY2tlZFByb21pc2UgPSBuZXcgUHJvbWlzZSgocmVzb2x2ZSkgPT4gewogICAgaW5wdXRFbGVtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ2NoYW5nZScsIChlKSA9PiB7CiAgICAgIHJlc29sdmUoZS50YXJnZXQuZmlsZXMpOwogICAgfSk7CiAgfSk7CgogIGNvbnN0IGNhbmNlbCA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ2J1dHRvbicpOwogIGlucHV0RWxlbWVudC5wYXJlbnRFbGVtZW50LmFwcGVuZENoaWxkKGNhbmNlbCk7CiAgY2FuY2VsLnRleHRDb250ZW50ID0gJ0NhbmNlbCB1cGxvYWQnOwogIGNvbnN0IGNhbmNlbFByb21pc2UgPSBuZXcgUHJvbWlzZSgocmVzb2x2ZSkgPT4gewogICAgY2FuY2VsLm9uY2xpY2sgPSAoKSA9PiB7CiAgICAgIHJlc29sdmUobnVsbCk7CiAgICB9OwogIH0pOwoKICAvLyBXYWl0IGZvciB0aGUgdXNlciB0byBwaWNrIHRoZSBmaWxlcy4KICBjb25zdCBmaWxlcyA9IHlpZWxkIHsKICAgIHByb21pc2U6IFByb21pc2UucmFjZShbcGlja2VkUHJvbWlzZSwgY2FuY2VsUHJvbWlzZV0pLAogICAgcmVzcG9uc2U6IHsKICAgICAgYWN0aW9uOiAnc3RhcnRpbmcnLAogICAgfQogIH07CgogIGNhbmNlbC5yZW1vdmUoKTsKCiAgLy8gRGlzYWJsZSB0aGUgaW5wdXQgZWxlbWVudCBzaW5jZSBmdXJ0aGVyIHBpY2tzIGFyZSBub3QgYWxsb3dlZC4KICBpbnB1dEVsZW1lbnQuZGlzYWJsZWQgPSB0cnVlOwoKICBpZiAoIWZpbGVzKSB7CiAgICByZXR1cm4gewogICAgICByZXNwb25zZTogewogICAgICAgIGFjdGlvbjogJ2NvbXBsZXRlJywKICAgICAgfQogICAgfTsKICB9CgogIGZvciAoY29uc3QgZmlsZSBvZiBmaWxlcykgewogICAgY29uc3QgbGkgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCdsaScpOwogICAgbGkuYXBwZW5kKHNwYW4oZmlsZS5uYW1lLCB7Zm9udFdlaWdodDogJ2JvbGQnfSkpOwogICAgbGkuYXBwZW5kKHNwYW4oCiAgICAgICAgYCgke2ZpbGUudHlwZSB8fCAnbi9hJ30pIC0gJHtmaWxlLnNpemV9IGJ5dGVzLCBgICsKICAgICAgICBgbGFzdCBtb2RpZmllZDogJHsKICAgICAgICAgICAgZmlsZS5sYXN0TW9kaWZpZWREYXRlID8gZmlsZS5sYXN0TW9kaWZpZWREYXRlLnRvTG9jYWxlRGF0ZVN0cmluZygpIDoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgJ24vYSd9IC0gYCkpOwogICAgY29uc3QgcGVyY2VudCA9IHNwYW4oJzAlIGRvbmUnKTsKICAgIGxpLmFwcGVuZENoaWxkKHBlcmNlbnQpOwoKICAgIG91dHB1dEVsZW1lbnQuYXBwZW5kQ2hpbGQobGkpOwoKICAgIGNvbnN0IGZpbGVEYXRhUHJvbWlzZSA9IG5ldyBQcm9taXNlKChyZXNvbHZlKSA9PiB7CiAgICAgIGNvbnN0IHJlYWRlciA9IG5ldyBGaWxlUmVhZGVyKCk7CiAgICAgIHJlYWRlci5vbmxvYWQgPSAoZSkgPT4gewogICAgICAgIHJlc29sdmUoZS50YXJnZXQucmVzdWx0KTsKICAgICAgfTsKICAgICAgcmVhZGVyLnJlYWRBc0FycmF5QnVmZmVyKGZpbGUpOwogICAgfSk7CiAgICAvLyBXYWl0IGZvciB0aGUgZGF0YSB0byBiZSByZWFkeS4KICAgIGxldCBmaWxlRGF0YSA9IHlpZWxkIHsKICAgICAgcHJvbWlzZTogZmlsZURhdGFQcm9taXNlLAogICAgICByZXNwb25zZTogewogICAgICAgIGFjdGlvbjogJ2NvbnRpbnVlJywKICAgICAgfQogICAgfTsKCiAgICAvLyBVc2UgYSBjaHVua2VkIHNlbmRpbmcgdG8gYXZvaWQgbWVzc2FnZSBzaXplIGxpbWl0cy4gU2VlIGIvNjIxMTU2NjAuCiAgICBsZXQgcG9zaXRpb24gPSAwOwogICAgZG8gewogICAgICBjb25zdCBsZW5ndGggPSBNYXRoLm1pbihmaWxlRGF0YS5ieXRlTGVuZ3RoIC0gcG9zaXRpb24sIE1BWF9QQVlMT0FEX1NJWkUpOwogICAgICBjb25zdCBjaHVuayA9IG5ldyBVaW50OEFycmF5KGZpbGVEYXRhLCBwb3NpdGlvbiwgbGVuZ3RoKTsKICAgICAgcG9zaXRpb24gKz0gbGVuZ3RoOwoKICAgICAgY29uc3QgYmFzZTY0ID0gYnRvYShTdHJpbmcuZnJvbUNoYXJDb2RlLmFwcGx5KG51bGwsIGNodW5rKSk7CiAgICAgIHlpZWxkIHsKICAgICAgICByZXNwb25zZTogewogICAgICAgICAgYWN0aW9uOiAnYXBwZW5kJywKICAgICAgICAgIGZpbGU6IGZpbGUubmFtZSwKICAgICAgICAgIGRhdGE6IGJhc2U2NCwKICAgICAgICB9LAogICAgICB9OwoKICAgICAgbGV0IHBlcmNlbnREb25lID0gZmlsZURhdGEuYnl0ZUxlbmd0aCA9PT0gMCA/CiAgICAgICAgICAxMDAgOgogICAgICAgICAgTWF0aC5yb3VuZCgocG9zaXRpb24gLyBmaWxlRGF0YS5ieXRlTGVuZ3RoKSAqIDEwMCk7CiAgICAgIHBlcmNlbnQudGV4dENvbnRlbnQgPSBgJHtwZXJjZW50RG9uZX0lIGRvbmVgOwoKICAgIH0gd2hpbGUgKHBvc2l0aW9uIDwgZmlsZURhdGEuYnl0ZUxlbmd0aCk7CiAgfQoKICAvLyBBbGwgZG9uZS4KICB5aWVsZCB7CiAgICByZXNwb25zZTogewogICAgICBhY3Rpb246ICdjb21wbGV0ZScsCiAgICB9CiAgfTsKfQoKc2NvcGUuZ29vZ2xlID0gc2NvcGUuZ29vZ2xlIHx8IHt9OwpzY29wZS5nb29nbGUuY29sYWIgPSBzY29wZS5nb29nbGUuY29sYWIgfHwge307CnNjb3BlLmdvb2dsZS5jb2xhYi5fZmlsZXMgPSB7CiAgX3VwbG9hZEZpbGVzLAogIF91cGxvYWRGaWxlc0NvbnRpbnVlLAp9Owp9KShzZWxmKTsK",
+              "ok": true,
+              "headers": [
+                [
+                  "content-type",
+                  "application/javascript"
+                ]
+              ],
+              "status": 200,
+              "status_text": ""
+            }
+          },
+          "base_uri": "https://localhost:8080/",
+          "height": 74
+        },
+        "id": "ZBHmqqGsL8IG",
+        "outputId": "64b5df6a-f794-4ddd-f8c6-135e4036c72a"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ],
+            "text/html": [
+              "\n",
+              "     <input type=\"file\" id=\"files-16f67b84-a249-4862-afee-47045bd807a2\" name=\"files[]\" multiple disabled\n",
+              "        style=\"border:none\" />\n",
+              "     <output id=\"result-16f67b84-a249-4862-afee-47045bd807a2\">\n",
+              "      Upload widget is only available when the cell has been executed in the\n",
+              "      current browser session. Please rerun this cell to enable.\n",
+              "      </output>\n",
+              "      <script src=\"/nbextensions/google.colab/files.js\"></script> "
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Saving Real estate.csv to Real estate.csv\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import io\n",
+        "import pandas as pd\n",
+        "import numpy as np\n",
+        "\n",
+        "df = pd.read_csv(io.BytesIO(uploaded['Real estate.csv']))"
+      ],
+      "metadata": {
+        "id": "QYa-K1SbL-oX"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "df.rename(columns = {'X1 transaction date':'Transaction_date', 'X2 house age':'House_age',\n",
+        "                              'X3 distance to the nearest MRT station':'Distance_to_the_nearest_MRT_station',\n",
+        "                      'X4 number of convenience stores':'number_of_convenience_stores','X5 latitude':'latitude',\n",
+        "                      'X6 longitude':'longitude','Y house price of unit area':'price'}, inplace = True)\n",
+        "X=df[['Distance_to_the_nearest_MRT_station','number_of_convenience_stores','House_age','latitude']]\n",
+        "y= df['price']"
+      ],
+      "metadata": {
+        "id": "vbQngYk-MBwd"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.model_selection import train_test_split\n",
+        "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, shuffle = True, random_state=7)"
+      ],
+      "metadata": {
+        "id": "I-qL93ZbTKC9"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# # evaluate gradient boosting ensemble for regression\n",
+        "# from numpy import mean\n",
+        "# from numpy import std\n",
+        "# from sklearn.datasets import make_regression\n",
+        "# from sklearn.model_selection import cross_val_score\n",
+        "# from sklearn.model_selection import RepeatedKFold\n",
+        "# from sklearn.ensemble import GradientBoostingRegressor\n",
+        "# # define dataset\n",
+        "# # X, y = make_regression(n_samples=1000, n_features=20, n_informative=15, noise=0.1, random_state=7)\n",
+        "# # define the model\n",
+        "# model = GradientBoostingRegressor()\n",
+        "# # define the evaluation procedure\n",
+        "# cv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=1)\n",
+        "# # evaluate the model\n",
+        "# n_scores = cross_val_score(model, X, y, scoring='neg_mean_absolute_error', cv=cv, n_jobs=-1)\n",
+        "# # report performance\n",
+        "# print('MAE: %.3f (%.3f)' % (mean(n_scores), std(n_scores)))"
+      ],
+      "metadata": {
+        "id": "97wvQOGGQ8C9"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# gradient boosting ensemble for making predictions for regression\n",
+        "from sklearn.datasets import make_regression\n",
+        "from sklearn.ensemble import GradientBoostingRegressor\n",
+        "# define dataset\n",
+        "# X, y = make_regression(n_samples=1000, n_features=20, n_informative=15, noise=0.1, random_state=7)\n",
+        "# define the model\n",
+        "model = GradientBoostingRegressor()\n",
+        "# fit the model on the whole dataset\n",
+        "model.fit(X_train, y_train)\n",
+        "# make a single prediction\n",
+        "# row = [0.20543991, -0.97049844, -0.81403429, -0.23842689, -0.60704084, -0.48541492, 0.53113006, 2.01834338, -0.90745243, -1.85859731, -1.02334791, -0.6877744, 0.60984819, -0.70630121, -1.29161497, 1.32385441, 1.42150747, 1.26567231, 2.56569098, -0.11154792]\n",
+        "y_pred = model.predict(X_test)\n",
+        "# summarize prediction\n",
+        "print('Prediction: %d' % y_pred[0])"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "FJgN2XQKSHpV",
+        "outputId": "317da922-6766-4542-bfbb-45c5892b0f15"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Prediction: 67\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.metrics import mean_absolute_error\n",
+        "print(\"MAE\",mean_absolute_error(y_test,y_pred))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Wp5DZXfATjeN",
+        "outputId": "e63cd91a-6ce0-48bf-d696-ca2bd8d8e92f"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "MAE 4.5493914891296345\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.metrics import mean_squared_error\n",
+        "print(\"MSE\",mean_squared_error(y_test,y_pred))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "1TJFjLgQT15n",
+        "outputId": "c6a685a2-3ae1-48b7-9f98-e0b26fbe0928"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "MSE 37.57392866893761\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(\"RMSE\",np.sqrt(mean_squared_error(y_test,y_pred)))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "ZZrxRGUWT4mv",
+        "outputId": "b8d60cc8-9eb4-4f66-ccf6-be9f06ffb8b8"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "RMSE 6.129757635415744\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(\"RMSE\",np.log(np.sqrt(mean_squared_error(y_test,y_pred))))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Gnj9Ew7ST6TH",
+        "outputId": "646e844e-8fd7-41d4-f97b-1b0933c9fe84"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "RMSE 1.813155211713924\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.metrics import r2_score\n",
+        "r2 = r2_score(y_test,y_pred)\n",
+        "print(r2)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Q2SnyyO5T8Dp",
+        "outputId": "39526200-db10-4639-b6ad-76812da08a19"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "0.6732367269345305\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# X=df[['Distance_to_the_nearest_MRT_station','number_of_convenience_stores','House_age','latitude']]\n",
+        "# # X=res[['Distance_to_the_nearest_MRT_station','number_of_convenience_stores','House_age','latitude','longitude','f_labels_0','f_labels_1','f_labels_2']]\n",
+        "# # X=res[['f_labels_0','f_labels_1','f_labels_2']]\n",
+        "# y= df['price']"
+      ],
+      "metadata": {
+        "id": "fRBWO0VOMEoW"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# X_arr = X.values\n",
+        "# y_arr = y.values\n",
+        "\n",
+        "# print('X_arr shape: ', X_arr.shape)\n",
+        "# print('Y_arr shape: ', y_arr.shape)"
+      ],
+      "metadata": {
+        "id": "DgftS5_gMGIq"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# X_train, X_test, y_train, y_test = train_test_split(X_arr, y_arr, test_size = 0.2, shuffle = True, random_state=7)\n",
+        "\n",
+        "# print('X_train shape: ', X_train.shape)\n",
+        "# print('y_train shape: ', y_train.shape)\n",
+        "# print('X_test shape: ', X_test.shape)\n",
+        "# print('y_test shape: ', y_test.shape)"
+      ],
+      "metadata": {
+        "id": "qqGzkEIDMIAZ"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# from sklearn.preprocessing import StandardScaler\n",
+        "# scaler=StandardScaler()\n",
+        "# scaler.fit(X_train)\n",
+        "\n",
+        "# X_train_scaled = scaler.transform(X_train)\n",
+        "# X_test_scaled = scaler.transform(X_test)"
+      ],
+      "metadata": {
+        "id": "Rv_OTA5AL2oM"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "y_pred= model.predict(X_test)\n",
+        "y_pred= pd.DataFrame(y_pred)"
+      ],
+      "metadata": {
+        "id": "HH3pA9bGLtXU"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "y_test= pd.DataFrame(y_test)"
+      ],
+      "metadata": {
+        "id": "tldzaPXbLq48"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "errors=abs(y_pred-y_test)"
+      ],
+      "metadata": {
+        "id": "N8UaSSVoLpYc"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Calculate mean absolute percentage error (MAPE)\n",
+        "mape = 100 * (errors / y_test)\n",
+        "# Calculate and display accuracy\n",
+        "# print(mape)\n",
+        "accuracy = 100 - np.mean(mape)\n",
+        "print('Accuracy:', round(accuracy, 2), '%.')"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "da1VjfbWLvss",
+        "outputId": "98d6c016-edf2-4287-a234-6b22a4bebbb5"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Accuracy: 0       NaN\n",
+            "price   NaN\n",
+            "dtype: float64 %.\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# # explore gradient boosting number of trees effect on performance\n",
+        "# from numpy import mean\n",
+        "# from numpy import std\n",
+        "# from sklearn.datasets import make_classification\n",
+        "# from sklearn.model_selection import cross_val_score\n",
+        "# from sklearn.model_selection import RepeatedStratifiedKFold\n",
+        "# from sklearn.ensemble import GradientBoostingClassifier\n",
+        "# from matplotlib import pyplot\n",
+        "\n",
+        "# # get the dataset\n",
+        "# def get_dataset():\n",
+        "# \tX, y = make_classification(n_samples=1000, n_features=20, n_informative=15, n_redundant=5, random_state=7)\n",
+        "# \treturn X, y\n",
+        "\n",
+        "# # get a list of models to evaluate\n",
+        "# def get_models():\n",
+        "# \tmodels = dict()\n",
+        "# \t# define number of trees to consider\n",
+        "# \tn_trees = [10, 50, 100, 500, 1000, 5000]\n",
+        "# \tfor n in n_trees:\n",
+        "# \t\tmodels[str(n)] = GradientBoostingClassifier(n_estimators=n)\n",
+        "# \treturn models\n",
+        "\n",
+        "# # evaluate a given model using cross-validation\n",
+        "# def evaluate_model(model, X, y):\n",
+        "# \t# define the evaluation procedure\n",
+        "# \tcv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)\n",
+        "# \t# evaluate the model and collect the results\n",
+        "# \tscores = cross_val_score(model, X, y, scoring='accuracy', cv=cv, n_jobs=-1)\n",
+        "# \treturn scores\n",
+        "\n",
+        "# # define dataset\n",
+        "# X, y = get_dataset()\n",
+        "# # get the models to evaluate\n",
+        "# models = get_models()\n",
+        "# # evaluate the models and store results\n",
+        "# results, names = list(), list()\n",
+        "# for name, model in models.items():\n",
+        "# \t# evaluate the model\n",
+        "# \tscores = evaluate_model(model, X, y)\n",
+        "# \t# store the results\n",
+        "# \tresults.append(scores)\n",
+        "# \tnames.append(name)\n",
+        "# \t# summarize the performance along the way\n",
+        "# \tprint('>%s %.3f (%.3f)' % (name, mean(scores), std(scores)))\n",
+        "# # plot model performance for comparison\n",
+        "# pyplot.boxplot(results, labels=names, showmeans=True)\n",
+        "# pyplot.show()"
+      ],
+      "metadata": {
+        "id": "aqoUFZRzSsvN"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# # explore gradient boosting ensemble learning rate effect on performance\n",
+        "# from numpy import mean\n",
+        "# from numpy import std\n",
+        "# from sklearn.datasets import make_classification\n",
+        "# from sklearn.model_selection import cross_val_score\n",
+        "# from sklearn.model_selection import RepeatedStratifiedKFold\n",
+        "# from sklearn.ensemble import GradientBoostingClassifier\n",
+        "# from matplotlib import pyplot\n",
+        "\n",
+        "# # get the dataset\n",
+        "# def get_dataset():\n",
+        "# \tX, y = make_classification(n_samples=1000, n_features=20, n_informative=15, n_redundant=5, random_state=7)\n",
+        "# \treturn X, y\n",
+        "\n",
+        "# # get a list of models to evaluate\n",
+        "# def get_models():\n",
+        "# \tmodels = dict()\n",
+        "# \t# define learning rates to explore\n",
+        "# \tfor i in [0.0001, 0.001, 0.01, 0.1, 1.0]:\n",
+        "# \t\tkey = '%.4f' % i\n",
+        "# \t\tmodels[key] = GradientBoostingClassifier(learning_rate=i)\n",
+        "# \treturn models\n",
+        "\n",
+        "# # evaluate a given model using cross-validation\n",
+        "# def evaluate_model(model, X, y):\n",
+        "# \t# define the evaluation procedure\n",
+        "# \tcv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)\n",
+        "# \t# evaluate the model and collect the results\n",
+        "# \tscores = cross_val_score(model, X, y, scoring='accuracy', cv=cv, n_jobs=-1)\n",
+        "# \treturn scores\n",
+        "\n",
+        "# # define dataset\n",
+        "# X, y = get_dataset()\n",
+        "# # get the models to evaluate\n",
+        "# models = get_models()\n",
+        "# # evaluate the models and store results\n",
+        "# results, names = list(), list()\n",
+        "# for name, model in models.items():\n",
+        "# \t# evaluate the model\n",
+        "# \tscores = evaluate_model(model, X, y)\n",
+        "# \t# store the results\n",
+        "# \tresults.append(scores)\n",
+        "# \tnames.append(name)\n",
+        "# \t# summarize the performance along the way\n",
+        "# \tprint('>%s %.3f (%.3f)' % (name, mean(scores), std(scores)))\n",
+        "# # plot model performance for comparison\n",
+        "# pyplot.boxplot(results, labels=names, showmeans=True)\n",
+        "# pyplot.show()"
+      ],
+      "metadata": {
+        "id": "W13cLFC0SzN1"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
